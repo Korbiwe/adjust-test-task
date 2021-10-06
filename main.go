@@ -16,28 +16,28 @@ import (
 )
 
 const (
-	defaultTarLink     = "https://github.com/adjust/analytics-software-engineer-assignment/blob/master/data.tar.gz?raw=true"
-	tempDirName = "adjustTestTaskData"
-	actorsFilename = "actors.csv"
+	defaultTarLink  = "https://github.com/adjust/analytics-software-engineer-assignment/blob/master/data.tar.gz?raw=true"
+	tempDirName     = "adjustTestTaskData"
+	actorsFilename  = "actors.csv"
 	commitsFilename = "commits.csv"
-	eventsFilename = "events.csv"
-	reposFilename = "repos.csv"
+	eventsFilename  = "events.csv"
+	reposFilename   = "repos.csv"
 )
 
 var (
-	ErrCantDownloadArchive = errors.New("couldn't download the archive")
+	ErrCantDownloadArchive          = errors.New("couldn't download the archive")
 	ErrUnhandledHeaderTypeInArchive = errors.New("unhandled header type inside the tar archive")
 	ErrInvalidEventCSV              = errors.New("invalid event csv")
-	ErrInvalidUserCSV              = errors.New("invalid user csv")
-	ErrInvalidCommitCSV              = errors.New("invalid commit csv")
-	ErrInvalidRepoCSV              = errors.New("invalid commit csv")
+	ErrInvalidUserCSV               = errors.New("invalid user csv")
+	ErrInvalidCommitCSV             = errors.New("invalid commit csv")
+	ErrInvalidRepoCSV               = errors.New("invalid commit csv")
 )
 
 type Event struct {
-	ID string
-	Type string
+	ID      string
+	Type    string
 	ActorID string
-	RepoID string
+	RepoID  string
 }
 
 func NewEventFromCSV(csv []string) (*Event, error) {
@@ -45,15 +45,15 @@ func NewEventFromCSV(csv []string) (*Event, error) {
 		return nil, ErrInvalidEventCSV
 	}
 	return &Event{
-		ID: csv[0],
-		Type: csv[1],
+		ID:      csv[0],
+		Type:    csv[1],
 		ActorID: csv[2],
-		RepoID: csv[3],
+		RepoID:  csv[3],
 	}, nil
 }
 
 type User struct {
-	ID string
+	ID       string
 	Username string
 }
 
@@ -62,13 +62,13 @@ func NewUserFromCSV(csv []string) (*User, error) {
 		return nil, ErrInvalidUserCSV
 	}
 	return &User{
-		ID: csv[0],
+		ID:       csv[0],
 		Username: csv[1],
 	}, nil
 }
 
 type Commit struct {
-	Hash string
+	Hash    string
 	Message string
 	EventID string
 }
@@ -78,14 +78,14 @@ func NewCommitFromCSV(csv []string) (*Commit, error) {
 		return nil, ErrInvalidCommitCSV
 	}
 	return &Commit{
-		Hash: csv[0],
+		Hash:    csv[0],
 		Message: csv[1],
 		EventID: csv[2],
 	}, nil
 }
 
 type Repo struct {
-	ID string
+	ID   string
 	Name string
 }
 
@@ -94,13 +94,13 @@ func NewRepoFromCSV(csv []string) (*Repo, error) {
 		return nil, ErrInvalidRepoCSV
 	}
 	return &Repo{
-		ID: csv[0],
+		ID:   csv[0],
 		Name: csv[1],
 	}, nil
 }
 
 type CommitRatableRepo struct {
-	ID string
+	ID      string
 	Name    string
 	Commits int64
 }
@@ -114,8 +114,8 @@ func (r *CommitRatableRepo) Pretty() string {
 }
 
 type WatchRatableRepo struct {
-	ID string
-	Name string
+	ID          string
+	Name        string
 	WatchEvents int64
 }
 
@@ -128,7 +128,7 @@ func (r *WatchRatableRepo) Pretty() string {
 }
 
 type RatableUser struct {
-	ID string
+	ID       string
 	Username string
 	Commits  int64
 	PREvents int64
@@ -143,7 +143,7 @@ func (u *RatableUser) Pretty() string {
 }
 
 type RepoWithCommitsAndWatches struct {
-	ID string
+	ID          string
 	Name        string
 	Commits     int64
 	WatchEvents int64
@@ -179,7 +179,7 @@ func extractTar(gzipStream io.Reader, path string) error {
 		case tar.TypeReg:
 			// wrapping it with a func here to take advantage of defer being called as early as possible
 			// could be extracted into a named function for better readability, but im kinda lazy rn
-			err := func () error {
+			err := func() error {
 				out, err := os.Create(filepath.Join(path, header.Name))
 				if err != nil {
 					return err
@@ -194,7 +194,7 @@ func extractTar(gzipStream io.Reader, path string) error {
 				return nil
 			}()
 			if err != nil {
-				 return err
+				return err
 			}
 		default:
 			return ErrUnhandledHeaderTypeInArchive
@@ -206,7 +206,7 @@ func extractTar(gzipStream io.Reader, path string) error {
 
 func (a *App) DownloadArchive(url string) error {
 	resp, err := http.Get(url)
-	defer func () {
+	defer func() {
 		_ = resp.Body.Close()
 		// TODO: log err
 	}()
@@ -216,7 +216,6 @@ func (a *App) DownloadArchive(url string) error {
 	if resp.StatusCode != http.StatusOK {
 		return ErrCantDownloadArchive
 	}
-
 
 	tempDir, err := ioutil.TempDir("", fmt.Sprintf("%s*", a.tempDir))
 	if err != nil {
@@ -280,7 +279,7 @@ func (a *App) countUserRating(userID string) (int64, int64, error) {
 	totalCommits := int64(0)
 	totalPREvents := int64(0)
 	eventsFile, err := os.Open(filepath.Join(a.tempDir, "data", eventsFilename))
-	defer func () {
+	defer func() {
 		_ = eventsFile.Close()
 		// TODO: log errors
 	}()
@@ -305,7 +304,6 @@ func (a *App) countUserRating(userID string) (int64, int64, error) {
 			continue
 		}
 
-
 		event, err := NewEventFromCSV(record)
 		if err != nil {
 			return 0, 0, err
@@ -317,7 +315,7 @@ func (a *App) countUserRating(userID string) (int64, int64, error) {
 		switch event.Type {
 		case eventTypePush:
 			commitCount, err := a.countCommitsByEvent(event.ID)
-			if err != nil{
+			if err != nil {
 				return 0, 0, err
 			}
 
@@ -337,7 +335,7 @@ func (a *App) countRepoRating(repoID string) (int64, int64, error) {
 	watchEvents := int64(0)
 
 	eventsFile, err := os.Open(filepath.Join(a.tempDir, "data", eventsFilename))
-	defer func () {
+	defer func() {
 		_ = eventsFile.Close()
 		// TODO: log errors
 	}()
@@ -394,7 +392,7 @@ func (a *App) rateReposByCommitsAndWatchesSpaceOptimized() (*Rating, *Rating, er
 	watchRating := NewRating(10)
 
 	reposFile, err := os.Open(filepath.Join(a.tempDir, "data", reposFilename))
-	defer func () {
+	defer func() {
 		_ = reposFile.Close()
 		// TODO: log error
 	}()
@@ -419,7 +417,7 @@ func (a *App) rateReposByCommitsAndWatchesSpaceOptimized() (*Rating, *Rating, er
 		}
 
 		repo, err := NewRepoFromCSV(record)
-		if err != nil{
+		if err != nil {
 			return nil, nil, err
 		}
 
@@ -442,7 +440,7 @@ func (a *App) rateReposByCommitsAndWatchesSpaceOptimized() (*Rating, *Rating, er
 func (a *App) rateUsersByPRsAndCommitsSpaceOptimized() (*Rating, error) {
 	rating := NewRating(10)
 	usersFile, err := os.Open(filepath.Join(a.tempDir, "data", actorsFilename))
-	defer func () {
+	defer func() {
 		_ = usersFile.Close()
 		// TODO: log errors
 	}()
@@ -596,7 +594,7 @@ func (a *App) PerformanceOptimizedRatings() (*Rating, *Rating, *Rating, error) {
 	repoWatchesRating := NewRating(10)
 
 	eventsFile, err := os.Open(filepath.Join(a.tempDir, "data", eventsFilename))
-	defer func () {
+	defer func() {
 		_ = eventsFile.Close()
 		// TODO: log errors
 	}()
@@ -666,7 +664,7 @@ func (a *App) PerformanceOptimizedRatings() (*Rating, *Rating, *Rating, error) {
 
 	err = a.fillUsernames(users)
 	if err != nil {
-		 return nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 	err = a.fillRepoNames(repos)
 	if err != nil {

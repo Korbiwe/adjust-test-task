@@ -42,7 +42,7 @@ func (r *Rating) Pretty() string {
 	pretty := ""
 
 	for i, value := range r.slice {
-		pretty += fmt.Sprintf("%d (Rating: %f): %s\n", i + 1, value.GetRating(), value.Pretty())
+		pretty += fmt.Sprintf("%d (Rating: %f): %s\n", i+1, value.GetRating(), value.Pretty())
 	}
 
 	return pretty
